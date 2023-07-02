@@ -19,9 +19,9 @@ export function select1(expression: string, node: Node): SelectWithResolverSingl
 
 export function useNamespaces(namespaceMap: Record<string, string>): XPathSelect;
 
-export function selectWithResolver(expression: string, node: Node, resolver: XPathNSResolver): SelectWithResolverReturnType;
-export function selectWithResolver(expression: string, node: Node, resolver: XPathNSResolver, single: false): SelectWithResolverReturnType;
-export function selectWithResolver(expression: string, node: Node, resolver: XPathNSResolver, single: true): SelectWithResolverSingleReturnType;
+export function selectWithResolver(expression: string, node: Node, resolver?: XPathNSResolver | null): SelectWithResolverReturnType;
+export function selectWithResolver(expression: string, node: Node, resolver: XPathNSResolver | null, single: false): SelectWithResolverReturnType;
+export function selectWithResolver(expression: string, node: Node, resolver: XPathNSResolver | null, single: true): SelectWithResolverSingleReturnType;
 
 // Type guards to narrow down the type of the selected type of a returned Node object
 export function isElement(value: SelectedValue): value is Element {
