@@ -4842,33 +4842,5 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     exports.select1 = function (e, doc) {
         return exports.select(e, doc, true);
     };
-
-    exports.isElement = function (value) {
-        return value instanceof Node && value.nodeType === Node.ELEMENT_NODE;
-    }
-    exports.isAttribute = function (value) {
-        return value instanceof Node && value.nodeType === Node.ATTRIBUTE_NODE;
-    }
-    exports.isText = function (value) {
-        return value instanceof Node && value.nodeType === Node.TEXT_NODE;
-    }
-    exports.isCDATASection = function (value) {
-        return value instanceof Node && value.nodeType === Node.CDATA_SECTION_NODE;
-    }
-    exports.isProcessingInstruction = function (value) {
-        return value instanceof Node && value.nodeType === Node.PROCESSING_INSTRUCTION_NODE;
-    }
-    exports.isComment = function (value) {
-        return value instanceof Node && value.nodeType === Node.COMMENT_NODE;
-    }
-    exports.isDocument = function (value) {
-        return value instanceof Node && value.nodeType === Node.DOCUMENT_NODE;
-    }
-    exports.isDocumentType = function (value) {
-        return value instanceof Node && value.nodeType === Node.DOCUMENT_TYPE_NODE;
-    }
-    exports.isDocumentFragment = function (value) {
-        return value instanceof Node && value.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
-    }
     // end non-node wrapper
 })(xpath);
