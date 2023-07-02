@@ -40,14 +40,6 @@ export function isCDATASection(value: SelectedValue): value is CDATASection {
     return value instanceof Node && value.nodeType === Node.CDATA_SECTION_NODE;
 }
 
-export function isEntityReference(value: SelectedValue): value is EntityReference {
-    return value instanceof Node && value.nodeType === Node.ENTITY_REFERENCE_NODE;
-}
-
-export function isEntity(value: SelectedValue): value is Entity {
-    return value instanceof Node && value.nodeType === Node.ENTITY_NODE;
-}
-
 export function isProcessingInstruction(value: SelectedValue): value is ProcessingInstruction {
     return value instanceof Node && value.nodeType === Node.PROCESSING_INSTRUCTION_NODE;
 }
@@ -66,8 +58,4 @@ export function isDocumentType(value: SelectedValue): value is DocumentType {
 
 export function isDocumentFragment(value: SelectedValue): value is DocumentFragment {
     return value instanceof Node && value.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
-}
-
-export function isNotation(value: SelectedValue): value is Notation {
-    return value instanceof Node && value.nodeType === Node.NOTATION_NODE;
 }
