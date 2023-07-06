@@ -24,38 +24,12 @@ export function selectWithResolver(expression: string, node: Node, resolver: XPa
 export function selectWithResolver(expression: string, node: Node, resolver: XPathNSResolver | null, single: true): SelectWithResolverSingleReturnType;
 
 // Type guards to narrow down the type of the selected type of a returned Node object
-export function isElement(value: SelectedValue): value is Element {
-    return value instanceof Node && value.nodeType === Node.ELEMENT_NODE;
-}
-
-export function isAttribute(value: SelectedValue): value is Attr {
-    return value instanceof Node && value.nodeType === Node.ATTRIBUTE_NODE;
-}
-
-export function isText(value: SelectedValue): value is Text {
-    return value instanceof Node && value.nodeType === Node.TEXT_NODE;
-}
-
-export function isCDATASection(value: SelectedValue): value is CDATASection {
-    return value instanceof Node && value.nodeType === Node.CDATA_SECTION_NODE;
-}
-
-export function isProcessingInstruction(value: SelectedValue): value is ProcessingInstruction {
-    return value instanceof Node && value.nodeType === Node.PROCESSING_INSTRUCTION_NODE;
-}
-
-export function isComment(value: SelectedValue): value is Comment {
-    return value instanceof Node && value.nodeType === Node.COMMENT_NODE;
-}
-
-export function isDocument(value: SelectedValue): value is Document {
-    return value instanceof Node && value.nodeType === Node.DOCUMENT_NODE;
-}
-
-export function isDocumentType(value: SelectedValue): value is DocumentType {
-    return value instanceof Node && value.nodeType === Node.DOCUMENT_TYPE_NODE;
-}
-
-export function isDocumentFragment(value: SelectedValue): value is DocumentFragment {
-    return value instanceof Node && value.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
-}
+export function isElement(value: SelectedValue): value is Element;
+export function isAttribute(value: SelectedValue): value is Attr;
+export function isText(value: SelectedValue): value is Text;
+export function isCDATASection(value: SelectedValue): value is CDATASection;
+export function isProcessingInstruction(value: SelectedValue): value is ProcessingInstruction;
+export function isComment(value: SelectedValue): value is Comment;
+export function isDocument(value: SelectedValue): value is Document;
+export function isDocumentType(value: SelectedValue): value is DocumentType;
+export function isDocumentFragment(value: SelectedValue): value is DocumentFragment;
