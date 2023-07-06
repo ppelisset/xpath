@@ -26,14 +26,14 @@ Can be found [here](https://github.com/goto100/xpath/blob/master/docs/xpath%20me
 ## Your first xpath:
 `````javascript
 var xpath = require('xpath');
-var dom = require('@xmldom/xmldom').DOMParser
+var dom = require('@xmldom/xmldom').DOMParser;
 
-var xml = "<book><title>Harry Potter</title></book>"
-var doc = new dom().parseFromString(xml)
-var nodes = xpath.select("//title", doc)
+var xml = "<book><title>Harry Potter</title></book>";
+var doc = new dom().parseFromString(xml, 'text/xml');
+var nodes = xpath.select("//title", doc);
 
-console.log(nodes[0].localName + ": " + nodes[0].firstChild.data)
-console.log("Node: " + nodes[0].toString())
+console.log(nodes[0].localName + ": " + nodes[0].firstChild.data);
+console.log("Node: " + nodes[0].toString());
 `````
 ➡
 
@@ -46,15 +46,15 @@ Using the same interface you have on modern browsers ([MDN])
 
 `````javascript
 var node = null;
-var xml = "<book author='J. K. Rowling'><title>Harry Potter</title></book>"
-var doc = new dom().parseFromString(xml, 'text/xml')
+var xml = "<book author='J. K. Rowling'><title>Harry Potter</title></book>";
+var doc = new dom().parseFromString(xml, 'text/xml');
 var result = xpath.evaluate(
     "/book/title",            // xpathExpression
     doc,                        // contextNode
     null,                       // namespaceResolver
     xpath.XPathResult.ANY_TYPE, // resultType
     null                        // result
-)
+);
 
 node = result.iterateNext();
 while (node) {
@@ -83,11 +83,11 @@ console.log(title);
 
 ## Namespaces
 `````javascript
-var xml = "<book><title xmlns='myns'>Harry Potter</title></book>"
-var doc = new dom().parseFromString(xml, 'text/xml')
-var node = xpath.select("//*[local-name(.)='title' and namespace-uri(.)='myns']", doc)[0]
+var xml = "<book><title xmlns='myns'>Harry Potter</title></book>";
+var doc = new dom().parseFromString(xml, 'text/xml');
+var node = xpath.select("//*[local-name(.)='title' and namespace-uri(.)='myns']", doc)[0];
 
-console.log(node.namespaceURI)
+console.log(node.namespaceURI);
 `````
 ➡
 
@@ -117,11 +117,11 @@ console.log(select('//bookml:title/text()', doc)[0].nodeValue);
 
 ## Attributes
 `````javascript
-var xml = "<book author='J. K. Rowling'><title>Harry Potter</title></book>"
-var doc = new dom().parseFromString(xml, 'text/xml')
-var author = xpath.select1("/book/@author", doc).value
+var xml = "<book author='J. K. Rowling'><title>Harry Potter</title></book>";
+var doc = new dom().parseFromString(xml, 'text/xml');
+var author = xpath.select1("/book/@author", doc).value;
 
-console.log(author)
+console.log(author);
 `````
 ➡
 
