@@ -26,10 +26,10 @@ export function selectWithResolver(expression: string, node: Node, resolver: XPa
 // Type guards to narrow down the type of the selected type of a returned Node object
 export function isElement(value: SelectedValue): value is Element;
 export function isAttribute(value: SelectedValue): value is Attr;
-export function isText(value: SelectedValue): value is Text;
+export function isTextNode(value: SelectedValue): value is Text;
 export function isCDATASection(value: SelectedValue): value is CDATASection;
 export function isProcessingInstruction(value: SelectedValue): value is ProcessingInstruction;
 export function isComment(value: SelectedValue): value is Comment;
-export function isDocument(value: SelectedValue): value is Document;
-export function isDocumentType(value: SelectedValue): value is DocumentType;
+export function isDocumentNode(value: SelectedValue): value is Document;
+export function isDocumentTypeNode(value: SelectedValue): value is DocumentType;
 export function isDocumentFragment(value: SelectedValue): value is DocumentFragment;

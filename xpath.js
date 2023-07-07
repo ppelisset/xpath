@@ -201,6 +201,18 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         return to;
     }
 
+    var NodeTypes = {
+        ELEMENT_NODE: 1,
+        ATTRIBUTE_NODE: 2,
+        TEXT_NODE: 3,
+        CDATA_SECTION_NODE: 4,
+        PROCESSING_INSTRUCTION_NODE: 7,
+        COMMENT_NODE: 8,
+        DOCUMENT_NODE: 9,
+        DOCUMENT_TYPE_NODE: 10,
+        DOCUMENT_FRAGMENT_NODE: 11,
+    };
+
     // XPathParser ///////////////////////////////////////////////////////////////
 
     XPathParser.prototype = new Object();
@@ -2380,7 +2392,11 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         NodeTest.NAMETESTQNAME,
         {
             matches: function (n, xpc) {
-                return NodeTest.isNodeType([1, 2, XPathNamespace.XPATH_NAMESPACE_NODE])(n) &&
+                return NodeTest.isNodeType([
+                    NodeTypes.ELEMENT_NODE,
+                    NodeTypes.ATTRIBUTE_NODE,
+                    XPathNamespace.XPATH_NAMESPACE_NODE
+                ])(n) &&
                     NodeTest.nameSpaceMatches(this.prefix, xpc, n) &&
                     NodeTest.localNameMatches(this.localName, xpc, n);
             },
@@ -2399,7 +2415,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
 
     NodeTest.PITest = NodeTest.makeNodeTestType(NodeTest.PI, {
         matches: function (n, xpc) {
-            return NodeTest.isNodeType([7])(n) && (n.target || n.nodeName) === this.name;
+            return NodeTest.isNodeType([NodeTypes.PROCESSING_INSTRUCTION_NODE])(n) && (n.target || n.nodeName) === this.name;
         },
         toString: function () {
             return wrap('processing-instruction("', '")', this.name);
@@ -2409,13 +2425,27 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     // singletons
 
     // elements, attributes, namespaces
-    NodeTest.nameTestAny = NodeTest.makeNodeTypeTest(NodeTest.NAMETESTANY, [1, 2, XPathNamespace.XPATH_NAMESPACE_NODE], '*');
+    NodeTest.nameTestAny = NodeTest.makeNodeTypeTest(
+        NodeTest.NAMETESTANY,
+        [NodeTypes.ELEMENT_NODE, NodeTypes.ATTRIBUTE_NODE, XPathNamespace.XPATH_NAMESPACE_NODE],
+        '*'
+    );
     // text, cdata
-    NodeTest.textTest = NodeTest.makeNodeTypeTest(NodeTest.TEXT, [3, 4], 'text()');
-    NodeTest.commentTest = NodeTest.makeNodeTypeTest(NodeTest.COMMENT, [8], 'comment()');
+    NodeTest.textTest = NodeTest.makeNodeTypeTest(NodeTest.TEXT, [NodeTypes.TEXT_NODE, NodeTypes.CDATA_SECTION_NODE], 'text()');
+    NodeTest.commentTest = NodeTest.makeNodeTypeTest(NodeTest.COMMENT, [NodeTypes.COMMENT_NODE], 'comment()');
     // elements, attributes, text, cdata, PIs, comments, document nodes
-    NodeTest.nodeTest = NodeTest.makeNodeTypeTest(NodeTest.NODE, [1, 2, 3, 4, 7, 8, 9], 'node()');
-    NodeTest.anyPiTest = NodeTest.makeNodeTypeTest(NodeTest.PI, [7], 'processing-instruction()');
+    NodeTest.nodeTest = NodeTest.makeNodeTypeTest(NodeTest.NODE, [
+        NodeTypes.ELEMENT_NODE,
+        NodeTypes.ATTRIBUTE_NODE, 
+        NodeTypes.TEXT_NODE, 
+        NodeTypes.CDATA_SECTION_NODE,
+        NodeTypes.PROCESSING_INSTRUCTION_NODE,
+        NodeTypes.COMMENT_NODE,
+        NodeTypes.DOCUMENT_NODE
+    ], 'node()');
+    NodeTest.anyPiTest = NodeTest.makeNodeTypeTest(NodeTest.PI, [
+        NodeTypes.PROCESSING_INSTRUCTION_NODE
+    ], 'processing-instruction()');
 
     // VariableReference /////////////////////////////////////////////////////////
 
@@ -4843,52 +4873,27 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         return exports.select(e, doc, true);
     };
 
-    const Node = {
-        ELEMENT_NODE: 1,
-        ATTRIBUTE_NODE: 2,
-        TEXT_NODE: 3,
-        CDATA_SECTION_NODE: 4,
-        PROCESSING_INSTRUCTION_NODE: 7,
-        COMMENT_NODE: 8,
-        DOCUMENT_NODE: 9,
-        DOCUMENT_TYPE_NODE: 10,
-        DOCUMENT_FRAGMENT_NODE: 11
+
+    // Result value tests
+    var isNodeOfType = function (type) {
+        return function (value) {
+            return value && value.nodeType === type;
+        };
     };
 
-    exports.isElement = function(value) {
-        return value && value.nodeType === Node.ELEMENT_NODE;
-    };
-
-    exports.isAttribute = function(value) {
-        return value && value.nodeType === Node.ATTRIBUTE_NODE;
-    };
-
-    exports.isText = function(value) {
-        return value && value.nodeType === Node.TEXT_NODE;
-    };
-
-    exports.isCDATASection = function(value) {
-        return value && value.nodeType === Node.CDATA_SECTION_NODE;
-    };
-
-    exports.isProcessingInstruction = function(value) {
-        return value && value.nodeType === Node.PROCESSING_INSTRUCTION_NODE;
-    };
-
-    exports.isComment = function(value) {
-        return value && value.nodeType === Node.COMMENT_NODE;
-    };
-
-    exports.isDocument = function(value) {
-        return value && value.nodeType === Node.DOCUMENT_NODE;
-    };
-
-    exports.isDocumentType = function(value) {
-        return value && value.nodeType === Node.DOCUMENT_TYPE_NODE;
-    };
-
-    exports.isDocumentFragment = function(value) {
-        return value && value.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
-    };
+    assign(
+        exports,
+        {
+            isElement: isNodeOfType(NodeTypes.ELEMENT_NODE),
+            isAttribute: isNodeOfType(NodeTypes.ATTRIBUTE_NODE),
+            isTextNode: isNodeOfType(NodeTypes.TEXT_NODE),
+            isCDATASection: isNodeOfType(NodeTypes.CDATA_SECTION_NODE),
+            isProcessingInstruction: isNodeOfType(NodeTypes.PROCESSING_INSTRUCTION_NODE),
+            isComment: isNodeOfType(NodeTypes.COMMENT_NODE),
+            isDocumentNode: isNodeOfType(NodeTypes.DOCUMENT_NODE),
+            isDocumentTypeNode: isNodeOfType(NodeTypes.DOCUMENT_TYPE_NODE),
+            isDocumentFragment: isNodeOfType(NodeTypes.DOCUMENT_FRAGMENT_NODE),
+        }
+    );
     // end non-node wrapper
 })(xpath);
