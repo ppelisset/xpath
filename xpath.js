@@ -2392,11 +2392,13 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         NodeTest.NAMETESTQNAME,
         {
             matches: function (n, xpc) {
-                return NodeTest.isNodeType([
-                    NodeTypes.ELEMENT_NODE,
-                    NodeTypes.ATTRIBUTE_NODE,
-                    XPathNamespace.XPATH_NAMESPACE_NODE
-                ])(n) &&
+                return NodeTest.isNodeType(
+                    [
+                        NodeTypes.ELEMENT_NODE,
+                        NodeTypes.ATTRIBUTE_NODE,
+                        XPathNamespace.XPATH_NAMESPACE_NODE,
+                    ]
+                )(n) &&
                     NodeTest.nameSpaceMatches(this.prefix, xpc, n) &&
                     NodeTest.localNameMatches(this.localName, xpc, n);
             },
@@ -2415,7 +2417,10 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
 
     NodeTest.PITest = NodeTest.makeNodeTestType(NodeTest.PI, {
         matches: function (n, xpc) {
-            return NodeTest.isNodeType([NodeTypes.PROCESSING_INSTRUCTION_NODE])(n) && (n.target || n.nodeName) === this.name;
+            return NodeTest.isNodeType(
+                [NodeTypes.PROCESSING_INSTRUCTION_NODE]
+            )(n) &&
+                (n.target || n.nodeName) === this.name;
         },
         toString: function () {
             return wrap('processing-instruction("', '")', this.name);
@@ -2427,25 +2432,46 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     // elements, attributes, namespaces
     NodeTest.nameTestAny = NodeTest.makeNodeTypeTest(
         NodeTest.NAMETESTANY,
-        [NodeTypes.ELEMENT_NODE, NodeTypes.ATTRIBUTE_NODE, XPathNamespace.XPATH_NAMESPACE_NODE],
+        [
+            NodeTypes.ELEMENT_NODE,
+            NodeTypes.ATTRIBUTE_NODE,
+            XPathNamespace.XPATH_NAMESPACE_NODE,
+        ],
         '*'
     );
     // text, cdata
-    NodeTest.textTest = NodeTest.makeNodeTypeTest(NodeTest.TEXT, [NodeTypes.TEXT_NODE, NodeTypes.CDATA_SECTION_NODE], 'text()');
-    NodeTest.commentTest = NodeTest.makeNodeTypeTest(NodeTest.COMMENT, [NodeTypes.COMMENT_NODE], 'comment()');
+    NodeTest.textTest = NodeTest.makeNodeTypeTest(
+        NodeTest.TEXT,
+        [
+            NodeTypes.TEXT_NODE,
+            NodeTypes.CDATA_SECTION_NODE,
+        ],
+        'text()'
+    );
+    NodeTest.commentTest = NodeTest.makeNodeTypeTest(
+        NodeTest.COMMENT,
+        [NodeTypes.COMMENT_NODE],
+        'comment()'
+    );
     // elements, attributes, text, cdata, PIs, comments, document nodes
-    NodeTest.nodeTest = NodeTest.makeNodeTypeTest(NodeTest.NODE, [
-        NodeTypes.ELEMENT_NODE,
-        NodeTypes.ATTRIBUTE_NODE, 
-        NodeTypes.TEXT_NODE, 
-        NodeTypes.CDATA_SECTION_NODE,
-        NodeTypes.PROCESSING_INSTRUCTION_NODE,
-        NodeTypes.COMMENT_NODE,
-        NodeTypes.DOCUMENT_NODE
-    ], 'node()');
-    NodeTest.anyPiTest = NodeTest.makeNodeTypeTest(NodeTest.PI, [
-        NodeTypes.PROCESSING_INSTRUCTION_NODE
-    ], 'processing-instruction()');
+    NodeTest.nodeTest = NodeTest.makeNodeTypeTest(
+        NodeTest.NODE,
+        [
+            NodeTypes.ELEMENT_NODE,
+            NodeTypes.ATTRIBUTE_NODE, 
+            NodeTypes.TEXT_NODE, 
+            NodeTypes.CDATA_SECTION_NODE,
+            NodeTypes.PROCESSING_INSTRUCTION_NODE,
+            NodeTypes.COMMENT_NODE,
+            NodeTypes.DOCUMENT_NODE,
+        ],
+        'node()'
+    );
+    NodeTest.anyPiTest = NodeTest.makeNodeTypeTest(
+        NodeTest.PI,
+        [NodeTypes.PROCESSING_INSTRUCTION_NODE],
+        'processing-instruction()'
+    );
 
     // VariableReference /////////////////////////////////////////////////////////
 
