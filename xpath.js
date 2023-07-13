@@ -4750,49 +4750,49 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     assign(
         exports,
         {
-            XPath,
-            XPathParser,
-            XPathResult,
+            XPath: XPath,
+            XPathParser: XPathParser,
+            XPathResult: XPathResult,
 
-            Step,
-            PathExpr,
-            NodeTest,
-            LocationPath,
+            Step: Step,
+            PathExpr: PathExpr,
+            NodeTest: NodeTest,
+            LocationPath: LocationPath,
 
-            OrOperation,
-            AndOperation,
+            OrOperation: OrOperation,
+            AndOperation: AndOperation,
 
-            BarOperation,
+            BarOperation: BarOperation,
 
-            EqualsOperation,
-            NotEqualOperation,
-            LessThanOperation,
-            GreaterThanOperation,
-            LessThanOrEqualOperation,
-            GreaterThanOrEqualOperation,
+            EqualsOperation: EqualsOperation,
+            NotEqualOperation: NotEqualOperation,
+            LessThanOperation: LessThanOperation,
+            GreaterThanOperation: GreaterThanOperation,
+            LessThanOrEqualOperation: LessThanOrEqualOperation,
+            GreaterThanOrEqualOperation: GreaterThanOrEqualOperation,
 
-            PlusOperation,
-            MinusOperation,
-            MultiplyOperation,
-            DivOperation,
-            ModOperation,
-            UnaryMinusOperation,
-
-            FunctionCall,
-            VariableReference,
-
-            XPathContext,
-
-            XNodeSet,
-            XBoolean,
-            XString,
-            XNumber,
-
-            NamespaceResolver,
-            FunctionResolver,
-            VariableResolver,
-
-            Utilities,
+            PlusOperation: PlusOperation,
+            MinusOperation: MinusOperation,
+            MultiplyOperation: MultiplyOperation,
+            DivOperation: DivOperation,
+            ModOperation: ModOperation,
+            UnaryMinusOperation: UnaryMinusOperation,
+          
+            FunctionCall: FunctionCall,
+            VariableReference: VariableReference,
+          
+            XPathContext: XPathContext,
+          
+            XNodeSet: XNodeSet,
+            XBoolean: XBoolean,
+            XString: XString,
+            XNumber: XNumber,
+          
+            NamespaceResolver: NamespaceResolver,
+            FunctionResolver: FunctionResolver,
+            VariableResolver: VariableResolver,
+          
+            Utilities: Utilities,
         }
     );
 
