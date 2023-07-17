@@ -3,7 +3,7 @@
 export type ScalarValue = string | number | boolean;
 
 export type SelectReturnType = Array<Node> | ScalarValue;
-export type SelectSingleReturnType = ScalarValue | Node | null;
+export type SelectSingleReturnType = ScalarValue | Node | undefined;
 
 export interface XPathSelect {
     (expression: string, node: Node): SelectReturnType;
