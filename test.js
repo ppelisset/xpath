@@ -380,6 +380,29 @@ describe('xpath', () => {
             assert.strictEqual(1, lastChapter.length);
             assert.strictEqual("The burrow", lastChapter[0].textContent);
         });
+
+        it('should select and sort namespace nodes properly', () => {
+            const doc = parseXml('<book xmlns:b="http://book.com" xmlns="default-book" xmlns:a="http://author.com" xmlns:p="http://publisher"/>');
+
+            const namespaces = xpath.parse('/*/namespace::*').select({ node: doc });
+
+            assert.strictEqual(5, namespaces.length);
+
+            assert.equal('http://www.w3.org/XML/1998/namespace', namespaces[0].nodeValue);
+            assert.equal('xml', namespaces[0].localName);
+
+            assert.equal('http://book.com', namespaces[1].nodeValue);
+            assert.equal('b', namespaces[1].localName);
+
+            assert.equal('default-book', namespaces[2].nodeValue);
+            assert.equal('', namespaces[2].localName);
+
+            assert.equal('http://author.com', namespaces[3].nodeValue);
+            assert.equal('a', namespaces[3].localName);
+
+            assert.equal('http://publisher', namespaces[4].nodeValue);
+            assert.equal('p', namespaces[4].localName);
+        });
     });
 
     describe('string()', () => {

@@ -175,10 +175,10 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
 
         for (var start = 0; start < arr.length; start += MAX_ARGUMENT_LENGTH) {
             var chunk = arr.slice(start, start + MAX_ARGUMENT_LENGTH);
-            
+
             result = prototypeConcat.apply(result, chunk);
         }
-        
+
         return result;
     }
 
@@ -211,6 +211,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         DOCUMENT_NODE: 9,
         DOCUMENT_TYPE_NODE: 10,
         DOCUMENT_FRAGMENT_NODE: 11,
+        NAMESPACE_NODE: '__namespace',  // not part of DOM model
     };
 
     // XPathParser ///////////////////////////////////////////////////////////////
@@ -1834,6 +1835,20 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         return n;
     }
 
+    var getPrefixForNamespaceNode = function (attrNode) {
+        var nm = String(attrNode.name);
+
+        if (nm === "xmlns") {
+            return "";
+        }
+
+        if (nm.substring(0, 6) === "xmlns:") {
+            return nm.substring(6, nm.length);
+        }
+
+        return null;
+    };
+
     PathExpr.applyStep = function (step, xpc, node) {
         var self = this;
         var newNodes = [];
@@ -1976,30 +1991,30 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
                 break;
 
             case Step.NAMESPACE:
-                var n = {};
+                var nodes = {};
+
                 if (xpc.contextNode.nodeType == NodeTypes.ELEMENT_NODE) {
-                    n["xml"] = XPath.XML_NAMESPACE_URI;
-                    n["xmlns"] = XPath.XMLNS_NAMESPACE_URI;
+                    // BUG: This only collects the namespaces on the current node, but seemingly
+                    //      it should collect all those in scope
+                    nodes["xml"] = new XPathNamespace("xml", null, XPath.XML_NAMESPACE_URI, xpc.contextNode);
+
                     for (var m = xpc.contextNode; m != null && m.nodeType == NodeTypes.ELEMENT_NODE; m = m.parentNode) {
                         for (var k = 0; k < m.attributes.length; k++) {
                             var attr = m.attributes.item(k);
-                            var nm = String(attr.name);
-                            if (nm == "xmlns") {
-                                if (n[""] == undefined) {
-                                    n[""] = attr.value;
-                                }
-                            } else if (nm.length > 6 && nm.substring(0, 6) == "xmlns:") {
-                                var pre = nm.substring(6, nm.length);
-                                if (n[pre] == undefined) {
-                                    n[pre] = attr.value;
-                                }
+
+                            var pre = getPrefixForNamespaceNode(attr);
+
+                            if (pre != null && nodes[pre] == undefined) {
+                                nodes[pre] = new XPathNamespace(pre, attr, attr.value, xpc.contextNode);
                             }
                         }
                     }
-                    for (var pre in n) {
-                        var nsn = new XPathNamespace(pre, n[pre], xpc.contextNode);
-                        if (step.nodeTest.matches(nsn, xpc)) {
-                            newNodes.push(nsn);
+
+                    for (var pre in nodes) {
+                        var node = nodes[pre];
+
+                        if (step.nodeTest.matches(node, xpc)) {
+                            newNodes.push(node);
                         }
                     }
                 }
@@ -2396,7 +2411,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
                     [
                         NodeTypes.ELEMENT_NODE,
                         NodeTypes.ATTRIBUTE_NODE,
-                        XPathNamespace.XPATH_NAMESPACE_NODE,
+                        NodeTypes.NAMESPACE_NODE,
                     ]
                 )(n) &&
                     NodeTest.nameSpaceMatches(this.prefix, xpc, n) &&
@@ -2435,7 +2450,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         [
             NodeTypes.ELEMENT_NODE,
             NodeTypes.ATTRIBUTE_NODE,
-            XPathNamespace.XPATH_NAMESPACE_NODE,
+            NodeTypes.NAMESPACE_NODE,
         ],
         '*'
     );
@@ -2458,8 +2473,8 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         NodeTest.NODE,
         [
             NodeTypes.ELEMENT_NODE,
-            NodeTypes.ATTRIBUTE_NODE, 
-            NodeTypes.TEXT_NODE, 
+            NodeTypes.ATTRIBUTE_NODE,
+            NodeTypes.TEXT_NODE,
             NodeTypes.CDATA_SECTION_NODE,
             NodeTypes.PROCESSING_INSTRUCTION_NODE,
             NodeTypes.COMMENT_NODE,
@@ -3099,8 +3114,8 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
             n2Par = n2.parentNode || n2.ownerElement;
         }
 
-        var n1isAttr = Utilities.isAttribute(n1);
-        var n2isAttr = Utilities.isAttribute(n2);
+        var n1isAttr = isAttributeLike(n1);
+        var n2isAttr = isAttributeLike(n2);
 
         if (n1isAttr && !n2isAttr) {
             return -1;
@@ -3109,15 +3124,35 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
             return 1;
         }
 
+        // xml namespace node comes before others. namespace nodes before non-namespace nodes
+        if (n1.isXPathNamespace){
+            if (n1.nodeValue === XPath.XML_NAMESPACE_URI) {
+                return -1;
+            }
+
+            if (!n2.isXPathNamespace) {
+                return -1;
+            }
+
+            if (n2.nodeValue === XPath.XML_NAMESPACE_URI) {
+                return 1;
+            }
+        } else if (n2.isXPathNamespace) {
+            return 1;
+        }
+
         if (n1Par) {
-            var cn = n1isAttr ? n1Par.attributes : n1Par.childNodes,
-                len = cn.length;
+            var cn = n1isAttr ? n1Par.attributes : n1Par.childNodes;
+            var len = cn.length;
+            var n1Compare = n1.baseNode || n1;
+            var n2Compare = n2.baseNode || n2;
+
             for (var i = 0; i < len; i += 1) {
                 var n = cn[i];
-                if (n === n1) {
+                if (n === n1Compare) {
                     return -1;
                 }
-                if (n === n2) {
+                if (n === n2Compare) {
                     return 1;
                 }
             }
@@ -3388,16 +3423,17 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     XPathNamespace.prototype.constructor = XPathNamespace;
     XPathNamespace.superclass = Object.prototype;
 
-    function XPathNamespace(pre, ns, p) {
+    function XPathNamespace(pre, node, uri, p) {
         this.isXPathNamespace = true;
+        this.baseNode = node;
         this.ownerDocument = p.ownerDocument;
         this.nodeName = "#namespace";
         this.prefix = pre;
         this.localName = pre;
-        this.namespaceURI = ns;
-        this.nodeValue = ns;
+        this.namespaceURI = uri;
+        this.nodeValue = uri;
         this.ownerElement = p;
-        this.nodeType = XPathNamespace.XPATH_NAMESPACE_NODE;
+        this.nodeType = NodeTypes.NAMESPACE_NODE;
     }
 
     XPathNamespace.prototype.toString = function () {
@@ -3912,8 +3948,13 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
 
     var Utilities = new Object();
 
-    Utilities.isAttribute = function (val) {
-        return val && (val.nodeType === NodeTypes.ATTRIBUTE_NODE || val.ownerElement);
+    // Returns true if the node is an attribute node or namespace node
+    var isAttributeLike = function (val) {
+        return val && (
+            val.nodeType === NodeTypes.ATTRIBUTE_NODE ||
+            val.ownerElement ||
+            val.isXPathNamespace
+        );
     }
 
     Utilities.splitQName = function (qn) {
