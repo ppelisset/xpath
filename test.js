@@ -1,6 +1,7 @@
+const { allChildEls } = require('func-xml');
 const xpath = require('./xpath.js');
 const dom = require('@xmldom/xmldom').DOMParser;
-const assert = require('assert');
+const { strict: assert } = require('assert');
 
 var xhtmlNs = 'http://www.w3.org/1999/xhtml';
 
@@ -356,7 +357,17 @@ describe('xpath', () => {
         });
 
         it('should correctly evaluate context position', () => {
-            var doc = parseXml("<books><book><chapter>The boy who lived</chapter><chapter>The vanishing glass</chapter></book><book><chapter>The worst birthday</chapter><chapter>Dobby's warning</chapter><chapter>The burrow</chapter></book></books>");
+            var doc = parseXml(`<books>
+            <book>
+                <chapter>The boy who lived</chapter>
+                <chapter>The vanishing glass</chapter>
+            </book>
+            <book>
+                <chapter>The worst birthday</chapter>
+                <chapter>Dobby's warning</chapter>
+                <chapter>The burrow</chapter>
+            </book>
+        </books>`);
 
             var chapters = xpath.parse('/books/book/chapter[2]').select({ node: doc });
 
@@ -379,6 +390,189 @@ describe('xpath', () => {
 
             assert.strictEqual(1, lastChapter.length);
             assert.strictEqual("The burrow", lastChapter[0].textContent);
+
+            // #135 - issues with context position
+            const blockQuotes = parseXml(`<html>
+            <body>
+              <div>
+                <blockquote type="cite" class="blockquote">
+                  <div id="1234">
+                    <span style="font-family: 'Times New Roman', serif; font-size: 16px; line-height: normal;">
+                      This is a test!
+                    </span>
+                  </div>
+                </blockquote>
+              </div>
+              <div><br/></div>
+              <blockquote style="margin-Top: 0px; margin-Bottom: 0px; margin-Left: 0.5em">
+                <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                  <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                    <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                      <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                        <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                          <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                            <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                              <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                                <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                                  <blockquote>
+                                    <span style="font-family: 'Times New Roman', serif; font-size: 16px; line-height: normal;">
+                                      This is also a test!
+                                    </span>
+                                  </blockquote>
+                                </blockquote>
+                              </blockquote>
+                            </blockquote>
+                          </blockquote>
+                        </blockquote>
+                      </blockquote>
+                    </blockquote>
+                  </blockquote>
+                </blockquote>
+              </blockquote>
+            </body>
+          </html>`);
+
+            const x = xpath
+                .parse(`(.//*[local-name(.)='blockquote'])[not(@class="gmail_quote") and not(ancestor::*[local-name() = 'blockquote'])][last()]`)
+                .select({ node: blockQuotes });
+
+            assert.strictEqual(1, x.length);
+
+            assert.strictEqual('This is also a test!', x[0].textContent.trim());
+        });
+
+        it('should select and sort namespace nodes properly', () => {
+            // #83 
+
+            const doc = parseXml('<book xmlns:b="http://book.com" xmlns="default-book" xmlns:a="http://author.com" xmlns:p="http://publisher"/>');
+
+            const namespaces = xpath.parse('/*/namespace::*').select({ node: doc });
+
+            assert.strictEqual(5, namespaces.length);
+
+            assert.equal('http://www.w3.org/XML/1998/namespace', namespaces[0].nodeValue);
+            assert.equal('xml', namespaces[0].localName);
+
+            assert.equal('http://book.com', namespaces[1].nodeValue);
+            assert.equal('b', namespaces[1].localName);
+
+            assert.equal('default-book', namespaces[2].nodeValue);
+            assert.equal('', namespaces[2].localName);
+
+            assert.equal('http://author.com', namespaces[3].nodeValue);
+            assert.equal('a', namespaces[3].localName);
+
+            assert.equal('http://publisher', namespaces[4].nodeValue);
+            assert.equal('p', namespaces[4].localName);
+        });
+
+        it('should allow using node positions', () => {
+            const doc = parseXml(`<books>
+                <book>
+                    <chapter>Chapter 1</chapter>
+                    <chapter>Chapter 2</chapter>
+                    <chapter>Chapter 3</chapter>
+                    <chapter>Chapter 4</chapter>
+                </book>
+                <book>
+                    <chapter>１章</chapter>
+                    <chapter>２章</chapter>
+                    <chapter>３章</chapter>
+                    <chapter>４章</chapter>
+                </book>
+            </books>`)
+
+            assert.equal(
+                xpath.parse('/*/book/chapter[1]').evaluateString({ node: doc }),
+                'Chapter 1',
+            );
+
+            assert.equal(
+                xpath.parse('/*/book/chapter[2]').evaluateString({ node: doc }),
+                'Chapter 2',
+            );
+
+            assert.equal(
+                xpath.parse('/*/book/chapter[3]').evaluateString({ node: doc }),
+                'Chapter 3',
+            );
+
+            assert.equal(
+                xpath.parse('/*/book[2]/chapter[1]').evaluateString({ node: doc }),
+                '１章',
+            );
+
+            assert.equal(
+                xpath.parse('/*/book/chapter[5]').evaluateString({ node: doc }),
+                '',
+            );
+
+            assert.equal(
+                xpath.parse('(/*/book/chapter)[5]').evaluateString({ node: doc }),
+                '１章',
+            );
+
+            const pos1Nodes = xpath.parse('/*/book/chapter[1]').select({ node: doc });
+
+            assert.equal(pos1Nodes.length, 2);
+
+            assert.equal(pos1Nodes[0].textContent, 'Chapter 1');
+            assert.equal(pos1Nodes[1].textContent, '１章');
+
+            const first3Nodes = xpath.parse('/*/book/chapter[position() <= 3]').select({ node: doc });
+
+            assert.equal(first3Nodes.length, 6);
+
+            assert.equal(first3Nodes[5].textContent, '３章');
+        });
+
+        it('should respect reverse axes', () => {
+            const doc = parseXml(`<book>
+                <chapter>Chapter 1</chapter>
+                <chapter>Chapter 2</chapter>
+                <chapter>Chapter 3</chapter>
+                <chapter>Chapter 4</chapter>
+            </book>`)
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding-sibling::*[1]').evaluateString({ node: doc }),
+                'Chapter 3',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding-sibling::*[2]').evaluateString({ node: doc }),
+                'Chapter 2',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding-sibling::*[3]').evaluateString({ node: doc }),
+                'Chapter 1',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding-sibling::*[4]').evaluateString({ node: doc }),
+                '',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding-sibling::*[last()]').evaluateString({ node: doc }),
+                'Chapter 1',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding::chapter[last()]').evaluateString({ node: doc }),
+                'Chapter 1',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding::*[position() = 1]').evaluateString({ node: doc }),
+                'Chapter 3',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding::*[. != "Chapter 3"][1]').evaluateString({ node: doc }),
+                'Chapter 2',
+            );
         });
     });
 
@@ -484,6 +678,44 @@ describe('xpath', () => {
             var str = xpath.select('substring("expelliarmus", 1, "a" = "a")');
 
             assert.strictEqual(str, 'e');
+        });
+
+        it('should get string values from namespace nodes', () => {
+            const doc = parseXml('<book xmlns:author="http://author" xmlns="https://book" />');
+
+            assert.equal(
+                xpath.parse('string(/*/namespace::author)').evaluateString({ node: doc }),
+                'http://author'
+            );
+            assert.equal(
+                xpath.parse('name(/*/namespace::author)').evaluateString({ node: doc }),
+                'author'
+            );
+            assert.equal(
+                xpath.parse('local-name(/*/namespace::author)').evaluateString({ node: doc }),
+                'author'
+            );
+            assert.equal(
+                xpath.parse('namespace-uri(/*/namespace::author)').evaluateString({ node: doc }),
+                ''
+            );
+
+            assert.equal(
+                xpath.parse('string(/*/namespace::*[not(local-name())])').evaluateString({ node: doc }),
+                'https://book'
+            );
+            assert.equal(
+                xpath.parse('name(/*/namespace::*[not(local-name())])').evaluateString({ node: doc }),
+                ''
+            );
+            assert.equal(
+                xpath.parse('local-name(/*/namespace::*[not(local-name())])').evaluateString({ node: doc }),
+                ''
+            );
+            assert.equal(
+                xpath.parse('namespace-uri(/*/namespace::*[not(local-name())])').evaluateString({ node: doc }),
+                ''
+            );
         });
     });
 
@@ -965,7 +1197,11 @@ describe('xpath', () => {
 
             assert.strictEqual('Heyy', translated);
 
-            var characters = parseXml('<characters><character>Harry</character><character>Ron</character><character>Hermione</character></characters>');
+            var characters = parseXml(`<characters>
+            <character>Harry</character>
+            <character>Ron</character>
+            <character>Hermione</character>
+        </characters>`);
 
             var firstTwo = xpath.parse('/characters/character[position() <= 2]').select({ node: characters });
 
@@ -973,10 +1209,23 @@ describe('xpath', () => {
             assert.strictEqual('Harry', firstTwo[0].textContent);
             assert.strictEqual('Ron', firstTwo[1].textContent);
 
-            var last = xpath.parse('/characters/character[last()]').select({ node: characters });
+            const last = xpath.parse('/characters/character[last()]').select({ node: characters });
 
             assert.strictEqual(1, last.length);
             assert.strictEqual('Hermione', last[0].textContent);
+
+            const lastPrefiltered = xpath.parse('/characters/character[. != "Hermione"][last()]').select({ node: characters });
+
+            assert.strictEqual(1, lastPrefiltered.length);
+            assert.strictEqual('Ron', lastPrefiltered[0].textContent);
+
+            const lastStrict = xpath.parse('/characters/character[last() = 3]').select({ node: characters, });
+
+            assert.equal(3, lastStrict.length);
+
+            const lastStrictMiss = xpath.parse('/characters/character[last() = 2]').select({ node: characters, });
+
+            assert.equal(0, lastStrictMiss.length);
         });
     });
 
