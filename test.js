@@ -1304,23 +1304,31 @@ describe('xpath', () => {
     describe('error handling', () => {
         it('should reject unspecified expression', () => {
             for (let expr of [null, undefined, '']) {
-                assert.throws(() => {
-                    xpath.parse(expr);
-                }, {
-                    message: 'XPath expression unspecified'
+                assert.throws(() => xpath.parse(expr), {
+                    message: 'XPath expression unspecified',
                 });
             }
         });
 
         it('should reject non-nodes', () => {
             for (let node of ['<n />', 0, 45, true, false, [], {}]) {
-                assert.throws(() => {
-                    xpath.parse('/*').select({ node });
-                }, {
-                    message: 'Context node does not appear to be a valid DOM node.'
+                assert.throws(() => xpath.parse('/*').select({ node }), {
+                    message: 'Context node does not appear to be a valid DOM node.',
                 });
             }
         });
+
+        it('should handle unspecified nodes', () => {
+            assert.throws(
+                () => xpath.parse('my:field').select(), {
+                message: 'Context node not found when evaluating XPath step: child::my:field',
+            });
+
+            assert.throws(
+                () => xpath.parse('/*').select(), {
+                message: 'Context node not found when determining document root.',
+            });
+        })
     });
 
     describe('Node type tests', () => {

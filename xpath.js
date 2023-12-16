@@ -1855,12 +1855,18 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     PathExpr.getRoot = function (xpc, nodes) {
         var firstNode = nodes[0];
 
-        if (firstNode.nodeType === NodeTypes.DOCUMENT_NODE) {
+        // xpc.virtualRoot could possibly provide a root even if firstNode is null,
+        // so using a guard here instead of throwing.
+        if (firstNode && firstNode.nodeType === NodeTypes.DOCUMENT_NODE) {
             return firstNode;
         }
 
         if (xpc.virtualRoot) {
             return xpc.virtualRoot;
+        }
+
+        if (!firstNode) {
+            throw new Error('Context node not found when determining document root.');
         }
 
         var ownerDoc = firstNode.ownerDocument;
@@ -1892,7 +1898,10 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     };
 
     PathExpr.applyStep = function (step, xpc, node) {
-        var self = this;
+        if (!node) {
+            throw new Error('Context node not found when evaluating XPath step: ' + step);
+        }
+
         var newNodes = [];
         xpc.contextNode = node;
 
