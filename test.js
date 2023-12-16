@@ -1311,6 +1311,16 @@ describe('xpath', () => {
                 });
             }
         });
+
+        it('should reject non-nodes', () => {
+            for (let node of ['<n />', 0, 45, true, false, [], {}]) {
+                assert.throws(() => {
+                    xpath.parse('/*').select({ node });
+                }, {
+                    message: 'Context node does not appear to be a valid DOM node.'
+                });
+            }
+        });
     });
 
     describe('Node type tests', () => {
