@@ -101,6 +101,28 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
 (function (exports) {
     "use strict";
 
+    // namespace nodes are not part of the DOM spec, so we use a custom nodetype for them.
+    // should NOT be used externally
+    var NAMESPACE_NODE_NODETYPE = '__namespace';
+
+    var isNil = function (x) {
+        return x === null || x === undefined;
+    };
+
+    var isValidNodeType = function (nodeType) {
+        return nodeType === NAMESPACE_NODE_NODETYPE ||
+            (Number.isInteger(nodeType)
+                && nodeType >= 1
+                && nodeType <= 11
+            );
+    };
+
+    var isNodeLike = function (value) {
+        return value
+            && isValidNodeType(value.nodeType)
+            && typeof value.nodeName === "string";
+    };
+
     // functional helpers
     function curry(func) {
         var slice = Array.prototype.slice,
@@ -167,7 +189,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
 
     var prototypeConcat = Array.prototype.concat;
 
-    var sortNodes = function(nodes, reverse) {
+    var sortNodes = function (nodes, reverse) {
         var ns = new XNodeSet();
 
         ns.addArray(nodes);
@@ -221,7 +243,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         DOCUMENT_NODE: 9,
         DOCUMENT_TYPE_NODE: 10,
         DOCUMENT_FRAGMENT_NODE: 11,
-        NAMESPACE_NODE: '__namespace',  // not part of DOM model
+        NAMESPACE_NODE: NAMESPACE_NODE_NODETYPE,
     };
 
     // XPathParser ///////////////////////////////////////////////////////////////
@@ -1246,6 +1268,13 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     XPathParser.ACCEPT = 'a';
 
     XPathParser.prototype.parse = function (s) {
+        if (!s) {
+            throw new Error('XPath expression unspecified.');
+        }
+        if (typeof s !== 'string'){
+            throw new Error('XPath expression must be a string.');
+        }
+
         var types;
         var values;
         var res = this.tokenize(s);
@@ -1324,6 +1353,12 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     }
 
     XPath.prototype.evaluate = function (c) {
+        var node = c.expressionContextNode;
+
+        if (!(isNil(node) || isNodeLike(node))) {
+            throw new Error("Context node does not appear to be a valid DOM node.");
+        }
+
         c.contextNode = c.expressionContextNode;
         c.contextSize = 1;
         c.contextPosition = 1;
@@ -1823,12 +1858,18 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     PathExpr.getRoot = function (xpc, nodes) {
         var firstNode = nodes[0];
 
-        if (firstNode.nodeType === NodeTypes.DOCUMENT_NODE) {
+        // xpc.virtualRoot could possibly provide a root even if firstNode is null,
+        // so using a guard here instead of throwing.
+        if (firstNode && firstNode.nodeType === NodeTypes.DOCUMENT_NODE) {
             return firstNode;
         }
 
         if (xpc.virtualRoot) {
             return xpc.virtualRoot;
+        }
+
+        if (!firstNode) {
+            throw new Error('Context node not found when determining document root.');
         }
 
         var ownerDoc = firstNode.ownerDocument;
@@ -1860,7 +1901,10 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     };
 
     PathExpr.applyStep = function (step, xpc, node) {
-        var self = this;
+        if (!node) {
+            throw new Error('Context node not found when evaluating XPath step: ' + step);
+        }
+
         var newNodes = [];
         xpc.contextNode = node;
 
@@ -3149,7 +3193,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         }
 
         // xml namespace node comes before others. namespace nodes before non-namespace nodes
-        if (n1.isXPathNamespace){
+        if (n1.isXPathNamespace) {
             if (n1.nodeValue === XPath.XML_NAMESPACE_URI) {
                 return -1;
             }
@@ -4490,6 +4534,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         this.context.caseInsensitive = XPathExpression.detectHtmlDom(n);
 
         var result = this.xpath.evaluate(this.context);
+
         return new XPathResult(result, t);
     }
 
@@ -4900,21 +4945,21 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
             DivOperation: DivOperation,
             ModOperation: ModOperation,
             UnaryMinusOperation: UnaryMinusOperation,
-          
+
             FunctionCall: FunctionCall,
             VariableReference: VariableReference,
-          
+
             XPathContext: XPathContext,
-          
+
             XNodeSet: XNodeSet,
             XBoolean: XBoolean,
             XString: XString,
             XNumber: XNumber,
-          
+
             NamespaceResolver: NamespaceResolver,
             FunctionResolver: FunctionResolver,
             VariableResolver: VariableResolver,
-          
+
             Utilities: Utilities,
         }
     );
@@ -4964,15 +5009,6 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
 
     exports.select1 = function (e, doc) {
         return exports.select(e, doc, true);
-    };
-
-    var isNodeLike = function (value) {
-        return value 
-            && typeof value.nodeType === "number" 
-            && Number.isInteger(value.nodeType)
-            && value.nodeType >= 1
-            && value.nodeType <= 11
-            && typeof value.nodeName === "string";
     };
 
     var isArrayOfNodes = function (value) {
