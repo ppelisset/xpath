@@ -466,6 +466,66 @@ describe('xpath', () => {
             assert.equal('p', namespaces[4].localName);
         });
 
+        it('should allow using node positions', () => {
+            const doc = parseXml(`<books>
+                <book>
+                    <chapter>Chapter 1</chapter>
+                    <chapter>Chapter 2</chapter>
+                    <chapter>Chapter 3</chapter>
+                    <chapter>Chapter 4</chapter>
+                </book>
+                <book>
+                    <chapter>１章</chapter>
+                    <chapter>２章</chapter>
+                    <chapter>３章</chapter>
+                    <chapter>４章</chapter>
+                </book>
+            </books>`)
+
+            assert.equal(
+                xpath.parse('/*/book/chapter[1]').evaluateString({ node: doc }),
+                'Chapter 1',
+            );
+
+            assert.equal(
+                xpath.parse('/*/book/chapter[2]').evaluateString({ node: doc }),
+                'Chapter 2',
+            );
+
+            assert.equal(
+                xpath.parse('/*/book/chapter[3]').evaluateString({ node: doc }),
+                'Chapter 3',
+            );
+
+            assert.equal(
+                xpath.parse('/*/book[2]/chapter[1]').evaluateString({ node: doc }),
+                '１章',
+            );
+
+            assert.equal(
+                xpath.parse('/*/book/chapter[5]').evaluateString({ node: doc }),
+                '',
+            );
+
+            assert.equal(
+                xpath.parse('(/*/book/chapter)[5]').evaluateString({ node: doc }),
+                '１章',
+            );
+
+            const pos1Nodes = xpath.parse('/*/book/chapter[1]').select({ node: doc });
+
+            assert.equal(pos1Nodes.length, 2);
+
+            assert.equal(pos1Nodes[0].textContent, 'Chapter 1');
+            assert.equal(pos1Nodes[1].textContent, '１章');
+
+            const first3Nodes = xpath.parse('/*/book/chapter[position() <= 3]').select({ node: doc });
+
+            assert.equal(first3Nodes.length, 6);
+
+            assert.equal(first3Nodes[5].textContent, '３章');
+        });
+
         it('should respect reverse axes', () => {
             const doc = parseXml(`<book>
                 <chapter>Chapter 1</chapter>
@@ -620,7 +680,7 @@ describe('xpath', () => {
             assert.strictEqual(str, 'e');
         });
 
-        it('should get string values from namespace nodes', ()=> {
+        it('should get string values from namespace nodes', () => {
             const doc = parseXml('<book xmlns:author="http://author" xmlns="https://book" />');
 
             assert.equal(
