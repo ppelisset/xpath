@@ -1901,6 +1901,41 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         return null;
     };
 
+    
+    var applyPrecedingStep = function (step, xpc) {
+        var newNodes = [];
+        var st;
+        
+        // TODO: Use getRoot instead of this if-else?
+        if (xpc.virtualRoot != null) {
+            st = [xpc.virtualRoot];
+        } else {
+            // cannot rely on .ownerDocument because the node may be in a document fragment
+            st = [findRoot(xpc.contextNode)];
+        }
+
+        outer: while (st.length > 0) {
+            for (var m = st.pop(); m != null;) {
+                if (m == xpc.contextNode) {
+                    break outer;
+                }
+                if (step.nodeTest.matches(m, xpc)) {
+                    newNodes.push(m);
+                }
+                if (m.firstChild != null) {
+                    st.push(m.nextSibling);
+                    m = m.firstChild;
+                } else {
+                    m = m.nextSibling;
+                }
+            }
+        }
+        
+        newNodes.reverse();
+
+        return newNodes;
+    };
+
     PathExpr.applyStep = function (step, xpc, node) {
         if (!node) {
             throw new Error('Context node not found when evaluating XPath step: ' + step);
@@ -2091,31 +2126,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
                 break;
 
             case Step.PRECEDING:
-                var st;
-                if (xpc.virtualRoot != null) {
-                    st = [xpc.virtualRoot];
-                } else {
-                    // cannot rely on .ownerDocument because the node may be in a document fragment
-                    st = [findRoot(xpc.contextNode)];
-                }
-                outer: while (st.length > 0) {
-                    for (var m = st.pop(); m != null;) {
-                        if (m == xpc.contextNode) {
-                            break outer;
-                        }
-                        if (step.nodeTest.matches(m, xpc)) {
-                            newNodes.push(m);
-                        }
-                        if (m.firstChild != null) {
-                            st.push(m.nextSibling);
-                            m = m.firstChild;
-                        } else {
-                            m = m.nextSibling;
-                        }
-                    }
-                }
-                newNodes.reverse();
-                break;
+                return applyPrecedingStep(step, xpc);
 
             case Step.PRECEDINGSIBLING:
                 if (xpc.contextNode === xpc.virtualRoot) {
