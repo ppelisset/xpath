@@ -19,6 +19,7 @@
   "devDependencies": {
     "@xmldom/xmldom": "^0.8.9",
     "es-check": "^7.1.1",
+    "func-xml": "^0.0.10",
     "mocha": "^9.0.2"
   },
   "typings": "./xpath.d.ts",

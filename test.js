@@ -1,6 +1,7 @@
+const { allChildEls } = require('func-xml');
 const xpath = require('./xpath.js');
 const dom = require('@xmldom/xmldom').DOMParser;
-const assert = require('assert');
+const { strict: assert } = require('assert');
 
 var xhtmlNs = 'http://www.w3.org/1999/xhtml';
 
@@ -460,6 +461,57 @@ describe('xpath', () => {
 
             assert.equal('http://publisher', namespaces[4].nodeValue);
             assert.equal('p', namespaces[4].localName);
+        });
+
+        it('should respect reverse axes', () => {
+            const doc = parseXml(`<book>
+                <chapter>Chapter 1</chapter>
+                <chapter>Chapter 2</chapter>
+                <chapter>Chapter 3</chapter>
+                <chapter>Chapter 4</chapter>
+            </book>`)
+
+            const [c1, c2, c3] = allChildEls(doc.documentElement);
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding-sibling::*[1]').evaluateString({ node: doc }),
+                'Chapter 3',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding-sibling::*[2]').evaluateString({ node: doc }),
+                'Chapter 2',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding-sibling::*[3]').evaluateString({ node: doc }),
+                'Chapter 1',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding-sibling::*[4]').evaluateString({ node: doc }),
+                '',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding-sibling::*[last()]').evaluateString({ node: doc }),
+                'Chapter 1',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding::chapter[last()]').evaluateString({ node: doc }),
+                'Chapter 1',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding::*[position() = 1]').evaluateString({ node: doc }),
+                'Chapter 3',
+            );
+
+            assert.equal(
+                xpath.parse('/*/chapter[last()]/preceding::*[. != "Chapter 3"][1]').evaluateString({ node: doc }),
+                'Chapter 2',
+            );
         });
     });
 
@@ -1046,7 +1098,11 @@ describe('xpath', () => {
 
             assert.strictEqual('Heyy', translated);
 
-            var characters = parseXml('<characters><character>Harry</character><character>Ron</character><character>Hermione</character></characters>');
+            var characters = parseXml(`<characters>
+            <character>Harry</character>
+            <character>Ron</character>
+            <character>Hermione</character>
+        </characters>`);
 
             var firstTwo = xpath.parse('/characters/character[position() <= 2]').select({ node: characters });
 
@@ -1054,10 +1110,23 @@ describe('xpath', () => {
             assert.strictEqual('Harry', firstTwo[0].textContent);
             assert.strictEqual('Ron', firstTwo[1].textContent);
 
-            var last = xpath.parse('/characters/character[last()]').select({ node: characters });
+            const last = xpath.parse('/characters/character[last()]').select({ node: characters });
 
             assert.strictEqual(1, last.length);
             assert.strictEqual('Hermione', last[0].textContent);
+
+            const lastPrefiltered = xpath.parse('/characters/character[. != "Hermione"][last()]').select({ node: characters });
+
+            assert.strictEqual(1, lastPrefiltered.length);
+            assert.strictEqual('Ron', lastPrefiltered[0].textContent);
+
+            const lastStrict = xpath.parse('/characters/character[last() = 3]').select({ node: characters, });
+
+            assert.equal(3, lastStrict.length);
+
+            const lastStrictMiss = xpath.parse('/characters/character[last() = 2]').select({ node: characters, });
+
+            assert.equal(0, lastStrictMiss.length);
         });
     });
 

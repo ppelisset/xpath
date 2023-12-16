@@ -1794,7 +1794,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         return node;
     }
 
-    PathExpr.applyPredicates = function (predicates, c, nodes) {
+    var applyPredicates = function (predicates, c, nodes, reverse) {
         if (predicates.length === 0) {
             return nodes;
         }
@@ -1815,7 +1815,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
                     inNodes
                 );
             },
-            sortNodes(nodes),
+            sortNodes(nodes, reverse),
             predicates
         );
     };
@@ -2094,10 +2094,11 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     };
 
     function applyStepWithPredicates(step, xpc, node) {
-        return PathExpr.applyPredicates(
+        return applyPredicates(
             step.predicates,
             xpc,
-            PathExpr.applyStep(step, xpc, node)
+            PathExpr.applyStep(step, xpc, node),
+            includes(REVERSE_AXES, step.axis)
         );
     }
 
@@ -2134,7 +2135,12 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         }
 
         return {
-            nodes: PathExpr.applyPredicates(this.filterPredicates || [], xpc, ns.toUnsortedArray())
+            nodes: applyPredicates(
+                this.filterPredicates || [],
+                xpc,
+                ns.toUnsortedArray(),
+                false // reverse
+            )
         };
     };
 
@@ -2313,6 +2319,14 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         [Step.PRECEDINGSIBLING, 'preceding-sibling'],
         [Step.SELF, 'self']
     ]);
+
+    var REVERSE_AXES = [
+        Step.ANCESTOR,
+        Step.ANCESTORORSELF,
+        Step.PARENT,
+        Step.PRECEDING,
+        Step.PRECEDINGSIBLING
+    ];
 
     // NodeTest //////////////////////////////////////////////////////////////////
 
