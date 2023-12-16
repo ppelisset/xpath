@@ -1271,7 +1271,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         if (!s) {
             throw new Error('XPath expression unspecified.');
         }
-        if (typeof s !== 'string'){
+        if (typeof s !== 'string') {
             throw new Error('XPath expression must be a string.');
         }
 
@@ -1901,11 +1901,46 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         return null;
     };
 
-    
+
+    var applyFollowingStep = function (step, xpc, nodes) {
+        var newNodes = [];
+
+        // TODO: why?
+        if (xpc.contextNode === xpc.virtualRoot) {
+            return newNodes;
+        }
+
+        var st = [];
+        if (xpc.contextNode.firstChild != null) {
+            st.push(xpc.contextNode.firstChild);
+        }
+
+        for (var m = xpc.contextNode; m != null && m.nodeType !== NodeTypes.DOCUMENT_NODE && m !== xpc.virtualRoot; m = m.parentNode) {
+            st.push(m.nextSibling);
+        }
+        st.reverse();
+
+        do {
+            for (var m = st.pop(); m != null;) {
+                if (step.nodeTest.matches(m, xpc)) {
+                    newNodes.push(m);
+                }
+                if (m.firstChild != null) {
+                    st.push(m.nextSibling);
+                    m = m.firstChild;
+                } else {
+                    m = m.nextSibling;
+                }
+            }
+        } while (st.length > 0);
+
+        return newNodes;
+    };
+
     var applyPrecedingStep = function (step, xpc) {
         var newNodes = [];
         var st;
-        
+
         // TODO: Use getRoot instead of this if-else?
         if (xpc.virtualRoot != null) {
             st = [xpc.virtualRoot];
@@ -1930,7 +1965,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
                 }
             }
         }
-        
+
         newNodes.reverse();
 
         return newNodes;
@@ -2042,33 +2077,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
                 break;
 
             case Step.FOLLOWING:
-                if (xpc.contextNode === xpc.virtualRoot) {
-                    break;
-                }
-                var st = [];
-                if (xpc.contextNode.firstChild != null) {
-                    st.push(xpc.contextNode.firstChild);
-                } else {
-                    st.push(xpc.contextNode.nextSibling);
-                }
-                for (var m = xpc.contextNode.parentNode; m != null && m.nodeType != NodeTypes.DOCUMENT_NODE && m !== xpc.virtualRoot; m = m.parentNode) {
-                    st.push(m.nextSibling);
-                }
-                st.reverse();
-                do {
-                    for (var m = st.pop(); m != null;) {
-                        if (step.nodeTest.matches(m, xpc)) {
-                            newNodes.push(m);
-                        }
-                        if (m.firstChild != null) {
-                            st.push(m.nextSibling);
-                            m = m.firstChild;
-                        } else {
-                            m = m.nextSibling;
-                        }
-                    }
-                } while (st.length > 0);
-                break;
+                return applyFollowingStep(step, xpc);
 
             case Step.FOLLOWINGSIBLING:
                 if (xpc.contextNode === xpc.virtualRoot) {
