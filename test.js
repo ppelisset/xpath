@@ -391,6 +391,7 @@ describe('xpath', () => {
             assert.strictEqual(1, lastChapter.length);
             assert.strictEqual("The burrow", lastChapter[0].textContent);
 
+            // #135 - issues with context position
             const blockQuotes = parseXml(`<html>
             <body>
               <div>
@@ -441,6 +442,8 @@ describe('xpath', () => {
         });
 
         it('should select and sort namespace nodes properly', () => {
+            // #83 
+
             const doc = parseXml('<book xmlns:b="http://book.com" xmlns="default-book" xmlns:a="http://author.com" xmlns:p="http://publisher"/>');
 
             const namespaces = xpath.parse('/*/namespace::*').select({ node: doc });
@@ -470,8 +473,6 @@ describe('xpath', () => {
                 <chapter>Chapter 3</chapter>
                 <chapter>Chapter 4</chapter>
             </book>`)
-
-            const [c1, c2, c3] = allChildEls(doc.documentElement);
 
             assert.equal(
                 xpath.parse('/*/chapter[last()]/preceding-sibling::*[1]').evaluateString({ node: doc }),
@@ -617,6 +618,44 @@ describe('xpath', () => {
             var str = xpath.select('substring("expelliarmus", 1, "a" = "a")');
 
             assert.strictEqual(str, 'e');
+        });
+
+        it('should get string values from namespace nodes', ()=> {
+            const doc = parseXml('<book xmlns:author="http://author" xmlns="https://book" />');
+
+            assert.equal(
+                xpath.parse('string(/*/namespace::author)').evaluateString({ node: doc }),
+                'http://author'
+            );
+            assert.equal(
+                xpath.parse('name(/*/namespace::author)').evaluateString({ node: doc }),
+                'author'
+            );
+            assert.equal(
+                xpath.parse('local-name(/*/namespace::author)').evaluateString({ node: doc }),
+                'author'
+            );
+            assert.equal(
+                xpath.parse('namespace-uri(/*/namespace::author)').evaluateString({ node: doc }),
+                ''
+            );
+
+            assert.equal(
+                xpath.parse('string(/*/namespace::*[not(local-name())])').evaluateString({ node: doc }),
+                'https://book'
+            );
+            assert.equal(
+                xpath.parse('name(/*/namespace::*[not(local-name())])').evaluateString({ node: doc }),
+                ''
+            );
+            assert.equal(
+                xpath.parse('local-name(/*/namespace::*[not(local-name())])').evaluateString({ node: doc }),
+                ''
+            );
+            assert.equal(
+                xpath.parse('namespace-uri(/*/namespace::*[not(local-name())])').evaluateString({ node: doc }),
+                ''
+            );
         });
     });
 

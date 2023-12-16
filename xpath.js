@@ -3451,10 +3451,10 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         this.isXPathNamespace = true;
         this.baseNode = node;
         this.ownerDocument = p.ownerDocument;
-        this.nodeName = "#namespace";
+        this.nodeName = pre;
         this.prefix = pre;
         this.localName = pre;
-        this.namespaceURI = uri;
+        this.namespaceURI = null;
         this.nodeValue = uri;
         this.ownerElement = p;
         this.nodeType = NodeTypes.NAMESPACE_NODE;
@@ -3679,6 +3679,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     Functions.namespaceURI = function () {
         var c = arguments[0];
         var n;
+
         if (arguments.length == 1) {
             n = c.contextNode;
         } else if (arguments.length == 2) {
@@ -3686,10 +3687,11 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
         } else {
             throw new Error("Function namespace-uri expects (node-set?)");
         }
+
         if (n == null) {
             return new XString("");
         }
-        return new XString(n.namespaceURI);
+        return new XString(n.namespaceURI || '');
     };
 
     Functions.name = function () {
