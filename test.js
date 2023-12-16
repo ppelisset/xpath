@@ -1301,6 +1301,18 @@ describe('xpath', () => {
         });
     });
 
+    describe('error handling', () => {
+        it('should reject unspecified expression', () => {
+            for (let expr of [null, undefined, '']) {
+                assert.throws(() => {
+                    xpath.parse(expr);
+                }, {
+                    message: 'XPath expression unspecified'
+                });
+            }
+        });
+    });
+
     describe('Node type tests', () => {
         it('should correctly identify a Node of type Element', () => {
             var doc = parseXml('<book />');

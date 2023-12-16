@@ -1246,6 +1246,10 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
     XPathParser.ACCEPT = 'a';
 
     XPathParser.prototype.parse = function (s) {
+        if (!s) {
+            throw new Error('XPath expression unspecified');
+        }
+
         var types;
         var values;
         var res = this.tokenize(s);
