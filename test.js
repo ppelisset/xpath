@@ -356,7 +356,17 @@ describe('xpath', () => {
         });
 
         it('should correctly evaluate context position', () => {
-            var doc = parseXml("<books><book><chapter>The boy who lived</chapter><chapter>The vanishing glass</chapter></book><book><chapter>The worst birthday</chapter><chapter>Dobby's warning</chapter><chapter>The burrow</chapter></book></books>");
+            var doc = parseXml(`<books>
+            <book>
+                <chapter>The boy who lived</chapter>
+                <chapter>The vanishing glass</chapter>
+            </book>
+            <book>
+                <chapter>The worst birthday</chapter>
+                <chapter>Dobby's warning</chapter>
+                <chapter>The burrow</chapter>
+            </book>
+        </books>`);
 
             var chapters = xpath.parse('/books/book/chapter[2]').select({ node: doc });
 
@@ -379,6 +389,54 @@ describe('xpath', () => {
 
             assert.strictEqual(1, lastChapter.length);
             assert.strictEqual("The burrow", lastChapter[0].textContent);
+
+            const blockQuotes = parseXml(`<html>
+            <body>
+              <div>
+                <blockquote type="cite" class="blockquote">
+                  <div id="1234">
+                    <span style="font-family: 'Times New Roman', serif; font-size: 16px; line-height: normal;">
+                      This is a test!
+                    </span>
+                  </div>
+                </blockquote>
+              </div>
+              <div><br/></div>
+              <blockquote style="margin-Top: 0px; margin-Bottom: 0px; margin-Left: 0.5em">
+                <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                  <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                    <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                      <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                        <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                          <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                            <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                              <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                                <blockquote type="cite" class="front-blockquote" style="margin-top: 0px;">
+                                  <blockquote>
+                                    <span style="font-family: 'Times New Roman', serif; font-size: 16px; line-height: normal;">
+                                      This is also a test!
+                                    </span>
+                                  </blockquote>
+                                </blockquote>
+                              </blockquote>
+                            </blockquote>
+                          </blockquote>
+                        </blockquote>
+                      </blockquote>
+                    </blockquote>
+                  </blockquote>
+                </blockquote>
+              </blockquote>
+            </body>
+          </html>`);
+
+            const x = xpath
+                .parse(`(.//*[local-name(.)='blockquote'])[not(@class="gmail_quote") and not(ancestor::*[local-name() = 'blockquote'])][last()]`)
+                .select({ node: blockQuotes });
+
+            assert.strictEqual(1, x.length);
+
+            assert.strictEqual('This is also a test!', x[0].textContent.trim());
         });
 
         it('should select and sort namespace nodes properly', () => {

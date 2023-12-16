@@ -167,6 +167,16 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
 
     var prototypeConcat = Array.prototype.concat;
 
+    var sortNodes = function(nodes, reverse) {
+        var ns = new XNodeSet();
+
+        ns.addArray(nodes);
+
+        var sorted = ns.toArray();
+
+        return reverse ? sorted.reverse() : sorted;
+    }
+
     // .apply() fails above a certain number of arguments - https://github.com/goto100/xpath/pull/98
     var MAX_ARGUMENT_LENGTH = 32767;
 
@@ -1805,7 +1815,7 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
                     inNodes
                 );
             },
-            nodes,
+            sortNodes(nodes),
             predicates
         );
     };
