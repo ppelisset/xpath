@@ -1305,11 +1305,18 @@ describe('xpath', () => {
         it('should reject unspecified expression', () => {
             for (let expr of [null, undefined, '']) {
                 assert.throws(() => xpath.parse(expr), {
-                    message: 'XPath expression unspecified',
+                    message: 'XPath expression unspecified.',
                 });
             }
         });
 
+        it('should reject non-string expression', () => {
+            for (let expr of [{}, []]) {
+                assert.throws(() => xpath.parse(expr), {
+                    message: 'XPath expression must be a string.',
+                });
+            }
+        });
         it('should reject non-nodes', () => {
             for (let node of ['<n />', 0, 45, true, false, [], {}]) {
                 assert.throws(() => xpath.parse('/*').select({ node }), {

@@ -1269,7 +1269,10 @@ var xpath = (typeof exports === 'undefined') ? {} : exports;
 
     XPathParser.prototype.parse = function (s) {
         if (!s) {
-            throw new Error('XPath expression unspecified');
+            throw new Error('XPath expression unspecified.');
+        }
+        if (typeof s !== 'string'){
+            throw new Error('XPath expression must be a string.');
         }
 
         var types;
