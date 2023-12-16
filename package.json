@@ -31,7 +31,10 @@
     "type": "git",
     "url": "https://github.com/goto100/xpath.git"
   },
-  "main": "./xpath.js",
+  "main": "xpath.js",
+  "files": [
+    "xpath.d.ts"
+  ],
   "keywords": [
     "xpath",
     "xml"
