@@ -53,39 +53,58 @@ export function isDocumentFragment(value: SelectedValue): value is DocumentFragm
 export function parse(expression: string): XPathEvaluator;
 
 export interface XPathEvaluator {
-  evaluate(options: EvaluateOptions): XPathResult;
-  evaluateBoolean(options: EvaluateOptions): boolean;
-  evaluateNumber(options: EvaluateOptions): number;
-  evaluateString(options: EvaluateOptions): string;
-  evaluateNodeSet(options: EvaluateOptions): Node[];
-  select(options: EvaluateOptions): SelectReturnType;
-  select1(options: EvaluateOptions): SelectSingleReturnType;
+    evaluate(options?: XPathEvaluateOptions): XPathResult;
+    evaluateBoolean(options?: XPathEvaluateOptions): boolean;
+    evaluateNumber(options?: XPathEvaluateOptions): number;
+    evaluateString(options?: XPathEvaluateOptions): string;
+    evaluateNodeSet(options?: XPathEvaluateOptions): XPathNodeSet;
+    select(options?: XPathEvaluateOptions): Node[];
+    select1(options?: XPathEvaluateOptions): Node | undefined;
 }
 
 export interface XPathEvaluateOptions {
-  node: Node;
-  functions?: Record<string, XPathFunction> | XPathFunctionResolver;
-  allowAnyNamespaceForNoPrefix?: boolean;
-  isHtml?: boolean;
+    node?: Node;
+    namespaces?: XPathNamespaceResolver;
+    variables?: XPathVariableResolver;
+    functions?: Record<string, XPathFunction> | XPathFunctionResolver;
+    position?: number;
+    size?: number;
+    allowAnyNamespaceForNoPrefix?: boolean;
+    isHtml?: boolean;
 }
+
+export type XPathNamespaceResolver = Record<string, string> | XPathNamespaceBasicResolver | {
+    getNamespace: XPathNamespaceBasicResolver
+};
+export type XPathNamespaceBasicResolver = (prefix: string, node: Node) => string | null | undefined;
+
+export type XPathVariableResolver = Record<string, XPathValue> | XPathVariableBasicResolver | {
+    getVariable: XPathVariableBasicResolver
+};
+export type XPathVariableBasicResolver = (name: string, namespace: string | null) => XPathValue;
 
 export type XPathFunctionResolver = XPathFunctionBasicResolver | {
-  getFunction: XPathFunctionBasicResolver
+    getFunction: XPathFunctionBasicResolver
 };
-type XPathFunctionBasicResolver = (name: string, namespace: string | null) => XPathFunction | null;
+export type XPathFunctionBasicResolver = (name: string, namespace: string | null) => XPathFunction | null | undefined;
 
-export type XPathFunction = (context: XPathFunctionContext, ...args: XPathResult[]) => unknown;
+export type XPathFunction = (context: XPathFunctionContext, ...args: XPathResult[]) => XPathValue;
 
 export interface XPathFunctionContext {
-  contextNode: Node;
+    contextNode: Node;
 }
 
+/** Values that variables and custom functions may produce; nodes and arrays of nodes become node sets. */
+export type XPathValue = string | number | boolean | Node | Node[] | XPathResult | null | undefined;
 
 export interface XPathResult {
-  booleanValue(): boolean;
-  numberValue(): number;
-  stringValue(): string;
-  toArray?(): Node[];
-  first?(): Node | null;
-  size?: number;
+    booleanValue(): boolean;
+    numberValue(): number;
+    stringValue(): string;
+}
+
+export interface XPathNodeSet extends XPathResult {
+    readonly size: number;
+    first(): Node | null;
+    toArray(): Node[];
 }
